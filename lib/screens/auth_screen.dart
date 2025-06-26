@@ -51,7 +51,9 @@ class _AuthScreenState extends State<AuthScreen> {
             'name': userEmail,
             'department': 'General',
             'position': 'Employee',
+            'role': 'employee', // 👈 add this
           });
+
         }
 
         // Go to Dashboard
