@@ -11,32 +11,26 @@ class LeaveRequestScreen extends StatefulWidget {
 class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
   final supabase = Supabase.instance.client;
   final _reasonController = TextEditingController();
-
-  DateTime? _startDate;
-  DateTime? _endDate;
+  DateTimeRange? _selectedRange;
 
   Future<void> _submitRequest() async {
-    if (_startDate == null || _endDate == null || _reasonController.text.isEmpty) {
+    final userId = supabase.auth.currentUser?.id;
+    if (userId == null || _selectedRange == null || _reasonController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
+          const SnackBar(content: Text('Fill all fields')));
       return;
     }
 
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return;
-
     await supabase.from('leave_requests').insert({
       'employee_id': userId,
-      'start_date': _startDate!.toIso8601String(),
-      'end_date': _endDate!.toIso8601String(),
+      'start_date': _selectedRange!.start.toIso8601String(),
+      'end_date': _selectedRange!.end.toIso8601String(),
       'reason': _reasonController.text,
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Leave request submitted!')),
-    );
     Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Leave request submitted')));
   }
 
   Future<void> _pickDateRange() async {
@@ -46,10 +40,7 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
-      setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
-      });
+      setState(() => _selectedRange = picked);
     }
   }
 
@@ -63,11 +54,13 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
           children: [
             FilledButton(
               onPressed: _pickDateRange,
-              child: const Text('Pick Date Range'),
+              child: const Text('Select Date Range'),
             ),
-            if (_startDate != null && _endDate != null)
-              Text('From: ${_startDate!.toLocal()} To: ${_endDate!.toLocal()}'),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            if (_selectedRange != null)
+              Text(
+                  'From ${_selectedRange!.start.toLocal().toString().split(" ")[0]} to ${_selectedRange!.end.toLocal().toString().split(" ")[0]}'),
+            const SizedBox(height: 12),
             TextField(
               controller: _reasonController,
               decoration: const InputDecoration(labelText: 'Reason'),
@@ -76,8 +69,8 @@ class _LeaveRequestScreenState extends State<LeaveRequestScreen> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _submitRequest,
-              child: const Text('Submit Request'),
-            ),
+              child: const Text('Submit'),
+            )
           ],
         ),
       ),

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_screen.dart';
-import 'package:hrms_app/features/attendance/presentation/attendance_screen.dart';
+import '../features/attendance/presentation/attendance_screen.dart';
 import 'attendance_history_screen.dart';
-import 'leave_approval_screen.dart';
-import 'leave_request_screen.dart';
 import 'profile_screen.dart';
+import 'leave_request_screen.dart';
+import 'leave_approval_screen.dart';
 import 'manage_employees_screen.dart';
+import 'employee_attendance_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,18 +25,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserRole();
+    _loadRole();
   }
 
-  Future<void> _loadUserRole() async {
+  Future<void> _loadRole() async {
     final userId = supabase.auth.currentUser?.id;
-    if (userId == null) {
-      setState(() {
-        role = 'unknown';
-        _loading = false;
-      });
-      return;
-    }
+    if (userId == null) return;
 
     final data = await supabase
         .from('employees')
@@ -59,110 +54,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Widget _buildTile(String title, IconData icon, VoidCallback onTap) {
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        leading: Icon(icon, size: 30),
+        title: Text(title, style: const TextStyle(fontSize: 18)),
+        trailing: const Icon(Icons.arrow_forward_ios),
+        onTap: onTap,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     final user = supabase.auth.currentUser;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-            tooltip: 'Logout',
-          ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ListView(
           children: [
             Text(
-              'Welcome, ${user?.email ?? 'User'}!',
-              style: Theme.of(context).textTheme.titleLarge,
+              'Welcome, ${user?.email ?? 'User'}',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 30),
-
-            FilledButton.icon(
-              icon: const Icon(Icons.access_time),
-              label: const Text('Check In / Out'),
-              onPressed: () {
-                Navigator.push(
+            const SizedBox(height: 24),
+            _buildTile('Check In / Out', Icons.access_time, () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AttendanceScreen()));
+            }),
+            _buildTile('Attendance History', Icons.history, () {
+              Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const AttendanceScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              icon: const Icon(Icons.edit_calendar),
-              label: const Text('Request Leave'),
-              onPressed: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
-              },
-            ),
-
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              icon: const Icon(Icons.history),
-              label: const Text('Attendance History'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AttendanceHistoryScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            FilledButton.icon(
-              icon: const Icon(Icons.person),
-              label: const Text('My Profile'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              },
-            ),
-
+                  MaterialPageRoute(
+                      builder: (_) => const AttendanceHistoryScreen()));
+            }),
+            _buildTile('Request Leave', Icons.edit_calendar, () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const LeaveRequestScreen()));
+            }),
+            _buildTile('Profile', Icons.person, () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()));
+            }),
             if (role == 'admin') ...[
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
               const Divider(),
-              const SizedBox(height: 10),
-              Text('Admin Panel', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 10),
-
-              FilledButton.icon(
-                icon: const Icon(Icons.manage_accounts),
-                label: const Text('Manage Employees'),
-                onPressed: () {
-                  Navigator.push(
+              const Text('Admin Tools',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              _buildTile('Approve Leave Requests', Icons.approval, () {
+                Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const ManageEmployeesScreen()),
-                  );
-                },
-              ),
+                    MaterialPageRoute(
+                        builder: (_) => const LeaveApprovalScreen()));
+              }),
+              _buildTile('Employee Attendance', Icons.list_alt, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EmployeeAttendanceScreen()),
+                );
+              }),
 
-              FilledButton.icon(
-                icon: const Icon(Icons.request_page),
-                label: const Text('Approve Leave Requests'),
-                onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const LeaveApprovalScreen()));
-                },
-              ),
-
-            ],
+              _buildTile('Manage Employees', Icons.manage_accounts, () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const ManageEmployeesScreen()));
+              }),
+            ]
           ],
         ),
       ),
