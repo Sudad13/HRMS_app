@@ -114,13 +114,13 @@ class _ManageEmployeesScreenState extends State<ManageEmployeesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manage Employees'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: _showCreateEmployeeDialog,
-            tooltip: 'Create Employee',
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.add),
+        //     onPressed: _showCreateEmployeeDialog,
+        //     tooltip: 'Create Employee',
+        //   ),
+        // ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
